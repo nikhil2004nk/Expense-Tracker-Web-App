@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Ensure the app uses full viewport height */
+html, body, #root {
+  height: 100%;
+}
+
+/* Smooth sidebar transitions */
+.transition-width {
+  transition: width 150ms ease-in-out;
+}
