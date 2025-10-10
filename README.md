@@ -6,10 +6,13 @@
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7.1-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)
 
 A modern, feature-rich expense tracking application built with React and TailwindCSS. Track your expenses, manage budgets, visualize spending patterns, and take control of your finances with an intuitive and responsive interface.
 
-[Features](#-features) • [Demo](#-demo) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Contributing](#-contributing)
+## 🚀 [Live Demo](https://nikhil2004nk.github.io/Expense-Tracker-Web-App/)
+
+[Features](#-features) • [Demo](#-demo) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Usage](#-usage) • [Deployment](#-deployment) • [Contributing](#-contributing)
 
 </div>
 
@@ -155,6 +158,12 @@ Complete profile management optimized for mobile interaction.
 - **PostCSS** - CSS processing and optimization
 - **Autoprefixer** - Automatic vendor prefixing
 
+### Deployment & CI/CD
+- **GitHub Pages** - Automated deployment
+- **GitHub Actions** - Continuous integration and deployment
+- **HashRouter** - Optimized for static hosting
+- **Vite Build** - Optimized production builds
+
 ---
 
 ## 🚀 Getting Started
@@ -254,58 +263,141 @@ yarn preview
 
 ---
 
+## 🚀 Deployment
+
+### GitHub Pages (Current Setup)
+
+This project is automatically deployed to GitHub Pages using GitHub Actions. Here's how it works:
+
+#### Automatic Deployment
+- **Trigger**: Every push to the `main` branch
+- **Workflow**: `.github/workflows/deploy.yml`
+- **Live URL**: [https://nikhil2004nk.github.io/Expense-Tracker-Web-App/](https://nikhil2004nk.github.io/Expense-Tracker-Web-App/)
+- **Build Time**: ~1-2 minutes after each push
+
+#### Deployment Configuration
+```yaml
+# Key configurations in vite.config.js
+export default defineConfig({
+  plugins: [react()],
+  base: '/Expense-Tracker-Web-App/', // Required for GitHub Pages
+})
+```
+
+```javascript
+// HashRouter for static hosting compatibility
+import { createHashRouter } from 'react-router-dom'
+```
+
+#### Manual Deployment Steps
+If you want to deploy this project to your own GitHub Pages:
+
+1. **Fork this repository**
+2. **Enable GitHub Pages**:
+   - Go to Settings → Pages
+   - Source: Select "GitHub Actions"
+3. **Push to main branch** - deployment happens automatically
+
+#### Alternative Deployment Options
+
+##### Vercel
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+##### Netlify
+```bash
+npm run build
+# Drag and drop dist folder to netlify.com
+```
+
+##### Firebase Hosting
+```bash
+npm install -g firebase-tools
+firebase init hosting
+npm run build
+firebase deploy
+```
+
+### Build Configuration
+- **Output Directory**: `dist/`
+- **Base Path**: `/Expense-Tracker-Web-App/`
+- **Routing**: Hash-based routing for static hosting
+- **Assets**: Optimized and minified for production
+
+---
+
 ## 📁 Project Structure
 
 ```
 expense-tracker-web-app/
-├── public/                      # Static assets
-│   └── data/
-│       └── summary.json        # Mock dashboard data
+├── .github/                   # GitHub configurations
+│   └── workflows/
+│       └── deploy.yml         # GitHub Actions deployment workflow
+├── public/                    # Static assets
+│   ├── data/
+│   │   └── summary.json       # Mock dashboard data
+│   └── 404.html              # Custom 404 page
+├── screenshots/               # Project screenshots
+│   ├── dashboard-dark.png
+│   ├── dashboard-light.png
+│   ├── transactions.png
+│   ├── budgets-light.png
+│   ├── budgets-dark.png
+│   ├── profile.png
+│   ├── settings.png
+│   ├── mobile-dashboard.png
+│   ├── mobile-transactions.png
+│   ├── mobile-budgets.png
+│   └── mobile-profile.png
 ├── src/
-│   ├── components/             # Reusable components
-│   │   ├── common/            # Common UI components
-│   │   │   ├── Loader.jsx     # Loading spinner
-│   │   │   ├── Modal.jsx      # Modal dialog
-│   │   │   ├── Toast.jsx      # Toast notifications
-│   │   │   └── index.js       # Component exports
-│   │   ├── transactions/      # Transaction components
+│   ├── components/            # Reusable components
+│   │   ├── common/           # Common UI components
+│   │   │   ├── Loader.jsx    # Loading spinner
+│   │   │   ├── Modal.jsx     # Modal dialog
+│   │   │   ├── Toast.jsx     # Toast notifications
+│   │   │   └── index.js      # Component exports
+│   │   ├── transactions/     # Transaction components
 │   │   │   ├── TransactionForm.jsx
 │   │   │   └── TransactionList.jsx
-│   │   ├── Header.jsx         # App header
-│   │   ├── Sidebar.jsx        # Navigation sidebar
-│   │   ├── ThemeToggle.jsx    # Theme switcher
-│   │   └── ToastProvider.jsx  # Toast context provider
-│   ├── contexts/              # React contexts
-│   │   └── ThemeContext.jsx   # Theme management
-│   ├── hooks/                 # Custom hooks
-│   │   ├── useDebounce.js     # Debounce hook
-│   │   ├── useLocalStorage.js # Local storage hook
-│   │   └── useToast.js        # Toast hook
-│   ├── pages/                 # Page components
-│   │   ├── auth/              # Authentication pages
+│   │   ├── Header.jsx        # App header
+│   │   ├── Sidebar.jsx       # Navigation sidebar
+│   │   ├── ThemeToggle.jsx   # Theme switcher
+│   │   └── ToastProvider.jsx # Toast context provider
+│   ├── contexts/             # React contexts
+│   │   └── ThemeContext.jsx  # Theme management
+│   ├── hooks/                # Custom hooks
+│   │   ├── useDebounce.js    # Debounce hook
+│   │   └── useLocalStorage.js # Local storage hook
+│   ├── pages/                # Page components
+│   │   ├── auth/             # Authentication pages
 │   │   │   ├── Login.jsx
 │   │   │   └── Register.jsx
-│   │   ├── Dashboard.jsx      # Dashboard page
-│   │   ├── Transactions.jsx   # Transactions page
-│   │   ├── Budgets.jsx        # Budgets page
-│   │   ├── Profile.jsx        # Profile page
-│   │   └── Settings.jsx       # Settings page
-│   ├── routes/                # Route configuration
-│   │   └── RequireAuth.jsx    # Protected route wrapper
-│   ├── services/              # API services
-│   │   ├── auth.js            # Authentication service
-│   │   └── transactions.js    # Transactions service
-│   ├── utils/                 # Utility functions
-│   │   └── currency.js        # Currency formatting
-│   ├── App.jsx                # Main app component
-│   ├── main.jsx              # App entry point
-│   └── index.css             # Global styles
-├── index.html                 # HTML template
-├── package.json              # Dependencies
-├── tailwind.config.ts        # Tailwind configuration
-├── vite.config.js            # Vite configuration
-├── postcss.config.js         # PostCSS configuration
-└── eslint.config.js          # ESLint configuration
+│   │   ├── Dashboard.jsx     # Dashboard page
+│   │   ├── Transactions.jsx  # Transactions page
+│   │   ├── Budgets.jsx       # Budgets page
+│   │   ├── Profile.jsx       # Profile page
+│   │   └── Settings.jsx      # Settings page
+│   ├── routes/               # Route configuration
+│   │   └── RequireAuth.jsx   # Protected route wrapper
+│   ├── services/             # API services
+│   │   ├── auth.js           # Authentication service
+│   │   └── transactions.js   # Transactions service
+│   ├── utils/                # Utility functions
+│   │   └── currency.js       # Currency formatting
+│   ├── App.jsx               # Main app component
+│   ├── main.jsx             # App entry point (HashRouter)
+│   └── index.css            # Global styles
+├── index.html                # HTML template
+├── package.json             # Dependencies and scripts
+├── package-lock.json        # Dependency lock file
+├── tailwind.config.ts       # Tailwind configuration
+├── vite.config.js           # Vite configuration (GitHub Pages base)
+├── postcss.config.js        # PostCSS configuration
+├── eslint.config.js         # ESLint configuration
+├── vercel.json              # Vercel deployment config (optional)
+└── README.md                # This file
 ```
 
 ---
@@ -366,10 +458,58 @@ Contributions are welcome! Here's how you can help:
 
 ---
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. 404 Error on GitHub Pages
+**Problem**: App shows 404 error when navigating to routes
+**Solution**: The app uses HashRouter for static hosting compatibility. URLs will have `#` (e.g., `#/dashboard`)
+
+#### 2. Data Not Loading
+**Problem**: Dashboard shows "Failed to load summary data"
+**Solution**: Check that `public/data/summary.json` exists and the fetch path is relative (`./data/summary.json`)
+
+#### 3. Build Failures
+**Problem**: GitHub Actions build fails
+**Solution**: 
+- Check Node.js version (should be 18+)
+- Verify all dependencies are in `package.json`
+- Check for TypeScript errors
+
+#### 4. Theme Not Persisting
+**Problem**: Theme resets on page refresh
+**Solution**: Theme is stored in localStorage and should persist. Clear browser cache if issues persist.
+
+### Development Issues
+
+#### Local Development
+```bash
+# If you encounter dependency issues
+rm -rf node_modules package-lock.json
+npm install
+
+# If build fails locally
+npm run build
+```
+
+#### GitHub Pages Deployment
+- Ensure `base: '/Expense-Tracker-Web-App/'` in `vite.config.js`
+- Use `createHashRouter` instead of `createBrowserRouter`
+- Check GitHub Actions logs for build errors
+
+---
+
 ## 🐛 Known Issues & Future Enhancements
 
 ### Known Issues
 - None currently reported
+
+### Recent Fixes ✅
+- ✅ Fixed routing for GitHub Pages deployment
+- ✅ Resolved data fetching path issues
+- ✅ Updated Profile page with enhanced theme management
+- ✅ Optimized for static hosting with HashRouter
 
 ### Planned Features
 - [ ] Backend integration with REST API
@@ -382,6 +522,9 @@ Contributions are welcome! Here's how you can help:
 - [ ] Transaction search
 - [ ] Data backup to cloud
 - [ ] Mobile app (React Native)
+- [ ] Progressive Web App (PWA) support
+- [ ] Offline functionality
+- [ ] Data import from CSV/Excel
 
 ---
 
