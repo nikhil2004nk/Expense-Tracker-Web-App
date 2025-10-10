@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,10 +9,7 @@ import { useTheme } from '../contexts/ThemeContext'
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  currency: z.string().min(1, 'Currency is required'),
-  theme: z.enum(['light', 'dark', 'system'], {
-    required_error: 'Please select a theme'
-  })
+  currency: z.string().min(1, 'Currency is required')
 })
 
 // Mock API functions
@@ -56,99 +53,65 @@ export default function Profile() {
   const { theme, setTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const isUpdatingFromContext = useRef(false)
   
-  // Local storage for preferences
+  // Local storage for preferences (excluding theme - handled by ThemeContext)
   const [storedPreferences, setStoredPreferences] = useLocalStorage('userPreferences', {
     name: '',
     email: '',
-    currency: 'INR',
-    theme: theme
+    currency: 'INR'
   })
 
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
-    reset,
-    watch,
-    setValue
+    reset
   } = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      ...storedPreferences,
-      theme: theme
-    }
+    defaultValues: storedPreferences
   })
 
-  const watchedTheme = watch('theme')
-
-  // Load profile data on component mount
+  // Load profile data on mount
   useEffect(() => {
     const loadProfile = async () => {
       try {
         setIsLoading(true)
-        // Try to load from API first, fallback to localStorage
         const apiData = await mockApi.loadProfile()
-        const dataToUse = { ...apiData, theme: theme }
-        reset(dataToUse)
-        setStoredPreferences(dataToUse)
+        const profileData = { name: apiData.name, email: apiData.email, currency: apiData.currency }
+        reset(profileData)
+        setStoredPreferences(profileData)
       } catch (error) {
-        console.warn('Failed to load profile from API, using local storage:', error)
-        const dataToUse = { ...storedPreferences, theme: theme }
-        reset(dataToUse)
+        console.warn('Failed to load from API, using local storage:', error)
+        reset(storedPreferences)
       } finally {
         setIsLoading(false)
       }
     }
-
     loadProfile()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Sync form with ThemeContext when theme changes externally (e.g., from header toggle)
-  useEffect(() => {
-    if (theme && theme !== watchedTheme && !isUpdatingFromContext.current) {
-      isUpdatingFromContext.current = true
-      setValue('theme', theme, { shouldDirty: false })
-      // Use microtask to reset flag after current render cycle
-      queueMicrotask(() => {
-        isUpdatingFromContext.current = false
-      })
-    }
-  }, [theme, watchedTheme, setValue])
-
-  // Apply theme changes immediately when user changes it in the form
-  useEffect(() => {
-    // Only update ThemeContext if the form value changed and we're not in the middle of a sync
-    if (watchedTheme && watchedTheme !== theme && !isUpdatingFromContext.current) {
-      setTheme(watchedTheme)
-    }
-  }, [watchedTheme, theme, setTheme])
+  // Handle theme change - applies immediately
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme)
+  }
 
   const onSubmit = async (data) => {
     try {
       setIsSaving(true)
       
-      // Apply theme immediately to ThemeContext (this will also update localStorage via ThemeContext)
-      if (data.theme !== theme) {
-        setTheme(data.theme)
-      }
-      
-      // Save other preferences to localStorage (excluding theme as it's handled by ThemeContext)
-      const { theme: _, ...otherPreferences } = data
-      setStoredPreferences({ ...otherPreferences, theme: data.theme })
+      // Save preferences
+      setStoredPreferences(data)
       
       // Try to sync with backend
       try {
-        await mockApi.saveProfile(data)
+        await mockApi.saveProfile({ ...data, theme })
         show('Profile saved successfully!', { type: 'success' })
       } catch (apiError) {
-        // Still show success since localStorage was updated
         show('Profile saved locally (offline mode)', { type: 'warning' })
       }
       
-      reset(data) // Reset form to mark as not dirty
+      reset(data)
     } catch (error) {
       show('Failed to save profile. Please try again.', { type: 'error' })
     } finally {
@@ -157,8 +120,7 @@ export default function Profile() {
   }
 
   const handleReset = () => {
-    // Reset to current theme from ThemeContext and stored preferences
-    reset({ ...storedPreferences, theme: theme })
+    reset(storedPreferences)
   }
 
   const handleChangePassword = () => {
@@ -325,52 +287,6 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Theme Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Theme Preference *
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {themes.map((theme) => (
-                <label
-                  key={theme.value}
-                  className={`relative flex cursor-pointer rounded-lg p-4 border-2 transition-all ${
-                    watchedTheme === theme.value
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    value={theme.value}
-                    className="sr-only"
-                    {...register('theme')}
-                  />
-                  <div className="flex items-center justify-center w-full">
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">{theme.icon}</div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {theme.label}
-                      </div>
-                    </div>
-                  </div>
-                  {watchedTheme === theme.value && (
-                    <div className="absolute top-2 right-2">
-                      <svg className="h-5 w-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  )}
-                </label>
-              ))}
-            </div>
-            {errors.theme && (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                {errors.theme.message}
-              </p>
-            )}
-          </div>
-
           {/* Form Actions */}
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
             {isDirty && (
@@ -401,6 +317,49 @@ export default function Profile() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Theme Preference Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">Theme Preference</h2>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Choose your preferred theme - changes apply immediately
+          </p>
+        </div>
+        
+        <div className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {themes.map((themeOption) => (
+              <button
+                key={themeOption.value}
+                type="button"
+                onClick={() => handleThemeChange(themeOption.value)}
+                className={`relative flex cursor-pointer rounded-lg p-4 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                  theme === themeOption.value
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center justify-center w-full">
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">{themeOption.icon}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {themeOption.label}
+                    </div>
+                  </div>
+                </div>
+                {theme === themeOption.value && (
+                  <div className="absolute top-2 right-2">
+                    <svg className="h-5 w-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Additional Settings Section */}
