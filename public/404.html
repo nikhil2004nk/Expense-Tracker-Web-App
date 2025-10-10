@@ -103,7 +103,7 @@
       <p>Redirecting to your expense tracking application...</p>
       
       <div class="redirect-message">
-        <p>If you're not redirected automatically, <a href="/Expense-Tracker-Web-App/">click here</a>.</p>
+        <p>If you're not redirected automatically, <a href="/">click here</a>.</p>
       </div>
       
       <div class="spinner"></div>
@@ -114,16 +114,12 @@
     </div>
 
     <script>
-      // Get the current path and redirect to the main app
+      // Simple redirect to home page for React Router
       const currentPath = window.location.pathname;
-      const basePath = '/Expense-Tracker-Web-App/';
       
-      // If we're not already at the base path, redirect
-      if (!currentPath.startsWith(basePath)) {
-        window.location.replace(basePath + currentPath.replace(basePath, ''));
-      } else {
-        // If we're already at the base path, try to reload
-        window.location.reload();
+      // Redirect to home page to let React Router handle the routing
+      if (currentPath !== '/') {
+        window.location.replace('/');
       }
       
       // Show error message after 5 seconds if still on this page
