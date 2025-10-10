@@ -63,7 +63,7 @@ export default function Modal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={closeOnOverlayClick ? onClose : undefined}
       role="dialog"
       aria-modal="true"
@@ -75,22 +75,22 @@ export default function Modal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`relative w-full ${sizeClasses[size]} rounded-lg bg-white shadow-xl transition-all ${className}`}
+        className={`relative w-full ${sizeClasses[size]} rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all max-h-[90vh] overflow-y-auto ${className}`}
         onClick={(e) => e.stopPropagation()}
         tabIndex={-1}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4 sticky top-0 bg-white dark:bg-gray-800 z-10">
+            <h2 id="modal-title" className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white pr-2">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+              className="flex-shrink-0 rounded-md p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
               aria-label="Close modal"
             >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -98,7 +98,7 @@ export default function Modal({
         )}
         
         {/* Content */}
-        <div className="px-6 py-4">
+        <div className="px-4 py-3 sm:px-6 sm:py-4">
           {children}
         </div>
       </div>
@@ -117,15 +117,15 @@ export function ConfirmModal({
   type = 'warning'
 }) {
   const typeStyles = {
-    warning: 'text-yellow-600 bg-yellow-50',
-    danger: 'text-red-600 bg-red-50',
-    info: 'text-blue-600 bg-blue-50'
+    warning: 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20',
+    danger: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
+    info: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
   }
 
   const iconStyles = {
-    warning: 'bg-yellow-100 text-yellow-600',
-    danger: 'bg-red-100 text-red-600',
-    info: 'bg-blue-100 text-blue-600'
+    warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
+    danger: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+    info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
   }
 
   const icons = {
@@ -153,26 +153,26 @@ export function ConfirmModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
         <div className={`flex-shrink-0 rounded-full p-2 ${iconStyles[type]}`}>
           {icons[type]}
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-          <p className="mt-2 text-sm text-gray-600">{message}</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{message}</p>
         </div>
       </div>
       
-      <div className="mt-6 flex justify-end gap-3">
+      <div className="mt-5 sm:mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
         <button
           onClick={onClose}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+          className="w-full sm:w-auto rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors"
         >
           {cancelText}
         </button>
         <button
           onClick={handleConfirm}
-          className={`rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+          className={`w-full sm:w-auto rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors ${
             type === 'danger' 
               ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' 
               : type === 'warning'

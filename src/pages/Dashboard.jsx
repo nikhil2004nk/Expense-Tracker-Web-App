@@ -13,10 +13,7 @@ import {
   Cell,
 } from 'recharts'
 import { LoaderCard } from '../components/common'
-
-function currency(amount) {
-  return amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' })
-}
+import { formatCurrency, formatAmount } from '../utils/currency'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -93,43 +90,43 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Income</div>
-          <div className="mt-2 text-xl font-semibold text-emerald-700 dark:text-emerald-400">{currency(totals.totalIncome || 0)}</div>
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Income</div>
+          <div className="mt-1 sm:mt-2 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-400 truncate">{formatCurrency(totals.totalIncome || 0)}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Expense</div>
-          <div className="mt-2 text-xl font-semibold text-rose-700 dark:text-rose-400">{currency(totals.totalExpense || 0)}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total Expense</div>
+          <div className="mt-1 sm:mt-2 text-lg sm:text-xl font-semibold text-rose-700 dark:text-rose-400 truncate">{formatCurrency(totals.totalExpense || 0)}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Balance</div>
-          <div className={`mt-2 text-xl font-semibold ${totals.balance >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-            {currency(totals.balance || 0)}
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Balance</div>
+          <div className={`mt-1 sm:mt-2 text-lg sm:text-xl font-semibold truncate ${totals.balance >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
+            {formatCurrency(totals.balance || 0)}
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Categories</div>
-          <div className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">{categoriesData.length}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Categories</div>
+          <div className="mt-1 sm:mt-2 text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">{categoriesData.length}</div>
         </div>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Income vs Expenses (Monthly)</h2>
-          <div className="h-64 sm:h-72">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 shadow-sm">
+          <h2 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-3 sm:mb-4">Income vs Expenses (Monthly)</h2>
+          <div className="h-56 sm:h-64 md:h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthsData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <BarChart data={monthsData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(v) => currency(Number(v))} />
-                <Legend />
+                <XAxis dataKey="month" style={{ fontSize: '0.75rem' }} />
+                <YAxis style={{ fontSize: '0.75rem' }} />
+                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
                 <Bar dataKey="income" name="Income" fill="#10B981" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="expense" name="Expense" fill="#EF4444" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -137,9 +134,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Expense Distribution by Category</h2>
-          <div className="h-64 sm:h-72">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 shadow-sm">
+          <h2 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-3 sm:mb-4">Expense Distribution by Category</h2>
+          <div className="h-56 sm:h-64 md:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -148,15 +145,15 @@ export default function Dashboard() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={90}
-                  label
+                  outerRadius={window.innerWidth < 640 ? 60 : 90}
+                  label={(entry) => window.innerWidth >= 640 ? entry.name : ''}
                 >
                   {categoriesData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={categoryColors[index % categoryColors.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => currency(Number(v))} />
-                <Legend />
+                <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

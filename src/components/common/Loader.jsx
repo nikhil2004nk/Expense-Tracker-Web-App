@@ -21,23 +21,13 @@ export default function Loader({ size = 'md', className = '' }) {
   )
 }
 
-export function LoaderOverlay({ message = 'Loading...', className = '' }) {
-  return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75 ${className}`}>
-      <div className="flex flex-col items-center space-y-4">
-        <Loader size="lg" />
-        <p className="text-sm font-medium text-gray-700">{message}</p>
-      </div>
-    </div>
-  )
-}
 
 export function LoaderCard({ message = 'Loading...', className = '' }) {
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white p-8 ${className}`}>
+    <div className={`rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 sm:p-8 ${className}`}>
       <div className="flex flex-col items-center space-y-4">
         <Loader size="lg" />
-        <p className="text-sm font-medium text-gray-700">{message}</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{message}</p>
       </div>
     </div>
   )

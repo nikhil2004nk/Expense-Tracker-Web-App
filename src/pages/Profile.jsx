@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useToast } from '../components/ToastProvider'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { useTheme } from '../contexts/ThemeContext'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,20 +27,21 @@ const mockApi = {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500))
     return {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      currency: 'USD',
+      name: 'Rajesh Kumar',
+      email: 'rajesh.kumar@example.com',
+      currency: 'INR',
       theme: 'light'
     }
   }
 }
 
 const currencies = [
+  { value: 'INR', label: 'INR - Indian Rupee', symbol: '₹' },
   { value: 'USD', label: 'USD - US Dollar', symbol: '$' },
   { value: 'EUR', label: 'EUR - Euro', symbol: '€' },
   { value: 'GBP', label: 'GBP - British Pound', symbol: '£' },
-  { value: 'CAD', label: 'CAD - Canadian Dollar', symbol: 'C$' },
   { value: 'AUD', label: 'AUD - Australian Dollar', symbol: 'A$' },
+  { value: 'CAD', label: 'CAD - Canadian Dollar', symbol: 'C$' },
   { value: 'JPY', label: 'JPY - Japanese Yen', symbol: '¥' }
 ]
 
@@ -51,15 +53,17 @@ const themes = [
 
 export default function Profile() {
   const { show } = useToast()
+  const { theme, setTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const isUpdatingFromContext = useRef(false)
   
   // Local storage for preferences
   const [storedPreferences, setStoredPreferences] = useLocalStorage('userPreferences', {
     name: '',
     email: '',
-    currency: 'USD',
-    theme: 'light'
+    currency: 'INR',
+    theme: theme
   })
 
   const {
@@ -71,7 +75,10 @@ export default function Profile() {
     setValue
   } = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: storedPreferences
+    defaultValues: {
+      ...storedPreferences,
+      theme: theme
+    }
   })
 
   const watchedTheme = watch('theme')
@@ -83,51 +90,54 @@ export default function Profile() {
         setIsLoading(true)
         // Try to load from API first, fallback to localStorage
         const apiData = await mockApi.loadProfile()
-        const dataToUse = apiData || storedPreferences
+        const dataToUse = { ...apiData, theme: theme }
         reset(dataToUse)
         setStoredPreferences(dataToUse)
       } catch (error) {
         console.warn('Failed to load profile from API, using local storage:', error)
-        reset(storedPreferences)
+        const dataToUse = { ...storedPreferences, theme: theme }
+        reset(dataToUse)
       } finally {
         setIsLoading(false)
       }
     }
 
     loadProfile()
-  }, [reset, storedPreferences, setStoredPreferences])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Apply theme changes immediately
+  // Sync form with ThemeContext when theme changes externally (e.g., from header toggle)
   useEffect(() => {
-    if (watchedTheme) {
-      applyTheme(watchedTheme)
+    if (theme && theme !== watchedTheme && !isUpdatingFromContext.current) {
+      isUpdatingFromContext.current = true
+      setValue('theme', theme, { shouldDirty: false })
+      // Use microtask to reset flag after current render cycle
+      queueMicrotask(() => {
+        isUpdatingFromContext.current = false
+      })
     }
-  }, [watchedTheme])
+  }, [theme, watchedTheme, setValue])
 
-  const applyTheme = (theme) => {
-    const root = document.documentElement
-    
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    } else if (theme === 'light') {
-      root.classList.remove('dark')
-    } else {
-      // System theme
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (prefersDark) {
-        root.classList.add('dark')
-      } else {
-        root.classList.remove('dark')
-      }
+  // Apply theme changes immediately when user changes it in the form
+  useEffect(() => {
+    // Only update ThemeContext if the form value changed and we're not in the middle of a sync
+    if (watchedTheme && watchedTheme !== theme && !isUpdatingFromContext.current) {
+      setTheme(watchedTheme)
     }
-  }
+  }, [watchedTheme, theme, setTheme])
 
   const onSubmit = async (data) => {
     try {
       setIsSaving(true)
       
-      // Save to localStorage immediately
-      setStoredPreferences(data)
+      // Apply theme immediately to ThemeContext (this will also update localStorage via ThemeContext)
+      if (data.theme !== theme) {
+        setTheme(data.theme)
+      }
+      
+      // Save other preferences to localStorage (excluding theme as it's handled by ThemeContext)
+      const { theme: _, ...otherPreferences } = data
+      setStoredPreferences({ ...otherPreferences, theme: data.theme })
       
       // Try to sync with backend
       try {
@@ -147,230 +157,301 @@ export default function Profile() {
   }
 
   const handleReset = () => {
-    reset(storedPreferences)
+    // Reset to current theme from ThemeContext and stored preferences
+    reset({ ...storedPreferences, theme: theme })
+  }
+
+  const handleChangePassword = () => {
+    // TODO: Implement password change modal/functionality
+    show('Password change feature coming soon!', { type: 'info' })
+  }
+
+  const handleExportData = () => {
+    try {
+      const userData = {
+        profile: storedPreferences,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      }
+      
+      const dataStr = JSON.stringify(userData, null, 2)
+      const dataBlob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `expense-tracker-data-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      show('Data exported successfully!', { type: 'success' })
+    } catch (error) {
+      show('Failed to export data. Please try again.', { type: 'error' })
+    }
+  }
+
+  const handleDeleteAccount = () => {
+    const confirmed = window.confirm(
+      '⚠️ Warning: This action cannot be undone!\n\n' +
+      'Are you sure you want to permanently delete your account?\n' +
+      'All your data will be lost forever.'
+    )
+    
+    if (confirmed) {
+      const doubleConfirm = window.confirm(
+        'This is your last chance!\n\n' +
+        'Type YES in the next prompt to confirm account deletion.'
+      )
+      
+      if (doubleConfirm) {
+        const finalConfirm = window.prompt('Type "DELETE" to confirm (all caps):')
+        if (finalConfirm === 'DELETE') {
+          // Clear all localStorage
+          localStorage.clear()
+          show('Account deleted successfully. Goodbye!', { type: 'success' })
+          // In a real app, you would redirect to login or logout
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 2000)
+        } else {
+          show('Account deletion cancelled.', { type: 'info' })
+        }
+      }
+    }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <div className="space-y-4 sm:space-y-6">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Profile & Settings</h1>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile & Settings</h1>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Manage your account preferences and settings
-            </p>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Profile & Settings</h1>
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          Manage your account preferences and settings
+        </p>
+      </div>
+
+      {/* Profile Form */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">Personal Information</h2>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Update your personal details and preferences
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* Name Field */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Full Name *
+            </label>
+            <input
+              id="name"
+              type="text"
+              className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.name 
+                  ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="Enter your full name"
+              {...register('name')}
+            />
+            {errors.name && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {errors.name.message}
+              </p>
+            )}
           </div>
 
-          {/* Profile Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Personal Information</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Update your personal details and preferences
+          {/* Email Field */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email Address *
+            </label>
+            <input
+              id="email"
+              type="email"
+              className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
+                errors.email 
+                  ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="Enter your email address"
+              {...register('email')}
+            />
+            {errors.email && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {errors.email.message}
               </p>
-            </div>
+            )}
+          </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-              {/* Name Field */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Full Name *
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
-                    errors.name 
-                      ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="Enter your full name"
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
+          {/* Currency Field */}
+          <div>
+            <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Preferred Currency *
+            </label>
+            <select
+              id="currency"
+              className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                errors.currency 
+                  ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              {...register('currency')}
+            >
+              {currencies.map((currency) => (
+                <option key={currency.value} value={currency.value}>
+                  {currency.label}
+                </option>
+              ))}
+            </select>
+            {errors.currency && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {errors.currency.message}
+              </p>
+            )}
+          </div>
 
-              {/* Email Field */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${
-                    errors.email 
-                      ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600'
+          {/* Theme Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Theme Preference *
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {themes.map((theme) => (
+                <label
+                  key={theme.value}
+                  className={`relative flex cursor-pointer rounded-lg p-4 border-2 transition-all ${
+                    watchedTheme === theme.value
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
-                  placeholder="Enter your email address"
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Currency Field */}
-              <div>
-                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Preferred Currency *
-                </label>
-                <select
-                  id="currency"
-                  className={`block w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                    errors.currency 
-                      ? 'border-red-300 dark:border-red-500 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  {...register('currency')}
                 >
-                  {currencies.map((currency) => (
-                    <option key={currency.value} value={currency.value}>
-                      {currency.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.currency && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.currency.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Theme Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Theme Preference *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {themes.map((theme) => (
-                    <label
-                      key={theme.value}
-                      className={`relative flex cursor-pointer rounded-lg p-4 border-2 transition-all ${
-                        watchedTheme === theme.value
-                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        value={theme.value}
-                        className="sr-only"
-                        {...register('theme')}
-                      />
-                      <div className="flex items-center justify-center w-full">
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">{theme.icon}</div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {theme.label}
-                          </div>
-                        </div>
+                  <input
+                    type="radio"
+                    value={theme.value}
+                    className="sr-only"
+                    {...register('theme')}
+                  />
+                  <div className="flex items-center justify-center w-full">
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">{theme.icon}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {theme.label}
                       </div>
-                      {watchedTheme === theme.value && (
-                        <div className="absolute top-2 right-2">
-                          <svg className="h-5 w-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                    </label>
-                  ))}
-                </div>
-                {errors.theme && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.theme.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                {isDirty && (
-                  <button
-                    type="button"
-                    onClick={handleReset}
-                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={!isDirty || isSaving}
-                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-md shadow-sm flex items-center justify-center"
-                >
-                  {isSaving ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </div>
+                  </div>
+                  {watchedTheme === theme.value && (
+                    <div className="absolute top-2 right-2">
+                      <svg className="h-5 w-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
+                </label>
+              ))}
+            </div>
+            {errors.theme && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                {errors.theme.message}
+              </p>
+            )}
           </div>
 
-          {/* Additional Settings Section */}
-          <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Account Settings</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Manage your account security and privacy
-              </p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">Change Password</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Update your account password</p>
-                </div>
-                <button className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
-                  Change Password
-                </button>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">Export Data</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Download your transaction data</p>
-                </div>
-                <button className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
-                  Export Data
-                </button>
-              </div>
+          {/* Form Actions */}
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
+            {isDirty && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!isDirty || isSaving}
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-md shadow-sm flex items-center justify-center"
+            >
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div>
-                  <h3 className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Permanently delete your account</p>
-                </div>
-                <button className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
-                  Delete Account
-                </button>
-              </div>
+      {/* Additional Settings Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">Account Settings</h2>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Manage your account security and privacy
+          </p>
+        </div>
+        <div className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Change Password</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Update your account password</p>
             </div>
+            <button 
+              onClick={handleChangePassword}
+              className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 self-start sm:self-auto flex-shrink-0"
+            >
+              Change Password
+            </button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Export Data</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Download your profile and transaction data</p>
+            </div>
+            <button 
+              onClick={handleExportData}
+              className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 self-start sm:self-auto flex-shrink-0"
+            >
+              Export Data
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Permanently delete your account and all data</p>
+            </div>
+            <button 
+              onClick={handleDeleteAccount}
+              className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 self-start sm:self-auto flex-shrink-0"
+            >
+              Delete Account
+            </button>
           </div>
         </div>
       </div>
+    </div>
   )
 }

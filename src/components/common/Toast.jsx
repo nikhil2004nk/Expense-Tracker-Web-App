@@ -15,10 +15,10 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
   }, [duration, onClose])
 
   const typeStyles = {
-    success: 'bg-emerald-600 text-white',
-    error: 'bg-red-600 text-white',
-    warning: 'bg-yellow-600 text-white',
-    info: 'bg-blue-600 text-white'
+    success: 'bg-emerald-600 dark:bg-emerald-700 text-white shadow-lg dark:shadow-emerald-900/50',
+    error: 'bg-red-600 dark:bg-red-700 text-white shadow-lg dark:shadow-red-900/50',
+    warning: 'bg-yellow-600 dark:bg-yellow-700 text-white shadow-lg dark:shadow-yellow-900/50',
+    info: 'bg-blue-600 dark:bg-blue-700 text-white shadow-lg dark:shadow-blue-900/50'
   }
 
   const icons = {
@@ -46,23 +46,23 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
 
   return (
     <div
-      className={`pointer-events-auto transform transition-all duration-300 ease-in-out ${
+      className={`pointer-events-auto transform transition-all duration-300 ease-in-out max-w-md w-full ${
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
       role="alert"
       aria-live="polite"
     >
-      <div className={`flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg ${typeStyles[type]}`}>
+      <div className={`flex items-center gap-2 sm:gap-3 rounded-lg px-3 py-2 sm:px-4 sm:py-3 border border-white/20 dark:border-white/10 ${typeStyles[type]}`}>
         <div className="flex-shrink-0">
           {icons[type]}
         </div>
-        <p className="text-sm font-medium">{message}</p>
+        <p className="text-xs sm:text-sm font-medium flex-1 min-w-0">{message}</p>
         <button
           onClick={() => {
             setIsVisible(false)
             setTimeout(onClose, 300)
           }}
-          className="ml-auto flex-shrink-0 rounded-md p-1 hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+          className="ml-auto flex-shrink-0 rounded-md p-1 hover:bg-white/20 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
           aria-label="Close notification"
         >
           <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -76,7 +76,7 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
 
 export function ToastContainer({ children, className = '' }) {
   return (
-    <div className={`fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4 ${className}`}>
+    <div className={`fixed inset-x-0 top-3 sm:top-4 z-50 flex flex-col items-center gap-2 px-3 sm:px-4 ${className}`}>
       {children}
     </div>
   )

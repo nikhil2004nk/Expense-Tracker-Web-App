@@ -34,16 +34,14 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const root = document.documentElement
     
+    // Remove dark class first
+    root.classList.remove('dark')
+    
+    // Then add it only if needed
     if (storedTheme === 'dark') {
       root.classList.add('dark')
-    } else if (storedTheme === 'light') {
-      root.classList.remove('dark')
-    } else if (storedTheme === 'system') {
-      if (systemTheme === 'dark') {
-        root.classList.add('dark')
-      } else {
-        root.classList.remove('dark')
-      }
+    } else if (storedTheme === 'system' && systemTheme === 'dark') {
+      root.classList.add('dark')
     }
     
     setMounted(true)

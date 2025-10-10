@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { logout } from '../services/auth'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: (
@@ -30,6 +31,14 @@ const navItems = [
 ]
 
 export default function Sidebar({ open, onClose }) {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    onClose()
+    navigate('/login')
+  }
+
   return (
     <>
       {/* Overlay for mobile */}
@@ -45,7 +54,7 @@ export default function Sidebar({ open, onClose }) {
         className={`fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
-        aria-hidden={!open}
+        aria-label="Main navigation"
       >
         <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
           <span className="font-semibold text-gray-900 dark:text-white">Navigation</span>
@@ -84,19 +93,31 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
         
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center">
-                <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
+        <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 space-y-2">
+            <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center">
+                  <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">User Account</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Free Plan</p>
               </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">User Account</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Free Plan</p>
-            </div>
+            
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
           </div>
         </div>
       </aside>

@@ -22,15 +22,15 @@ export default function Transactions() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Transactions</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Transactions</h1>
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 shadow-sm">
         <div className="mb-4">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">{editing ? 'Edit transaction' : 'Add a transaction'}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">{editing ? 'Edit transaction' : 'Add a transaction'}</h2>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {editing ? 'Update the transaction details below.' : 'Fill in the details to add a new transaction.'}
           </p>
         </div>

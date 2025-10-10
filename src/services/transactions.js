@@ -56,9 +56,13 @@ export async function deleteTransaction(id) {
 export function seedDemoIfEmpty() {
   const current = loadAll()
   if (current.length > 0) return
+  const today = new Date().toISOString().slice(0,10)
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10)
   const demo = [
-    { id: generateId(), amount: 12.5, category: 'Food', date: new Date().toISOString().slice(0,10), notes: 'Lunch', receiptUrl: '' },
-    { id: generateId(), amount: 45.0, category: 'Transport', date: new Date().toISOString().slice(0,10), notes: 'Gas', receiptUrl: '' },
+    { id: generateId(), amount: 250, category: 'Food', date: today, notes: 'Lunch at restaurant', receiptUrl: '' },
+    { id: generateId(), amount: 500, category: 'Groceries', date: today, notes: 'Weekly groceries', receiptUrl: '' },
+    { id: generateId(), amount: 1200, category: 'Transport', date: yesterday, notes: 'Fuel', receiptUrl: '' },
+    { id: generateId(), amount: 350, category: 'Shopping', date: yesterday, notes: 'Clothes', receiptUrl: '' },
   ]
   saveAll(demo)
 }
