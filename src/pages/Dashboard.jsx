@@ -26,7 +26,7 @@ export default function Dashboard() {
     async function load() {
       try {
         setLoading(true)
-        const res = await fetch('/data/summary.json')
+        const res = await fetch('./data/summary.json')
         if (!res.ok) throw new Error('Failed to load summary data')
         const json = await res.json()
         if (!isMounted) return
