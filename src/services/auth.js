@@ -1,52 +1,63 @@
-// Simple mock auth service. Replace fetch calls with real backend later.
+// Real auth service integrated with backend NestJS endpoints.
 
-const TOKEN_KEY = 'auth_token'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const SESSION_KEY = 'auth_session'
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+async function http(path, { method = 'GET', body, headers = {} } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: 'include',
+  })
+  let data
+  const text = await res.text()
+  try {
+    data = text ? JSON.parse(text) : null
+  } catch {
+    data = { message: text }
+  }
+  if (!res.ok) {
+    const err = new Error(data?.message || 'Request failed')
+    err.status = res.status
+    throw err
+  }
+  return data
 }
 
 export async function login({ email, password }) {
-  // Simulate network latency
-  await delay(500)
-
-  // Very basic mock logic
-  const isValid = typeof email === 'string' && email.includes('@') && password?.length >= 6
-  if (!isValid) {
-    const error = new Error('Invalid credentials')
-    error.status = 401
-    throw error
-  }
-
-  const token = btoa(`${email}:${Date.now()}`)
-  localStorage.setItem(TOKEN_KEY, token)
-  return { token }
+  const data = await http('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  })
+  // Backend sets httpOnly cookies on success; we mark session locally for routing.
+  localStorage.setItem(SESSION_KEY, '1')
+  return data // { id, email }
 }
 
 export async function register({ name, email, password }) {
-  await delay(700)
-
-  // Pretend the email must be unique
-  if (email?.toLowerCase() === 'taken@example.com') {
-    const error = new Error('Email already in use')
-    error.status = 409
-    throw error
-  }
-
-  // Return a fake success response
-  return { id: Math.random().toString(36).slice(2), name, email }
+  // Backend expects fullName according to RegisterDto
+  const data = await http('/auth/register', {
+    method: 'POST',
+    body: { fullName: name, email, password },
+  })
+  return data // { id, email, fullName }
 }
 
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
+export async function me() {
+  return http('/auth/me', { method: 'GET' })
 }
 
 export function logout() {
-  localStorage.removeItem(TOKEN_KEY)
+  // Best-effort server logout to clear refresh state; ignore errors
+  fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {})
+  localStorage.removeItem(SESSION_KEY)
 }
 
 export function isAuthenticated() {
-  return Boolean(getToken())
+  return localStorage.getItem(SESSION_KEY) === '1'
 }
-
 

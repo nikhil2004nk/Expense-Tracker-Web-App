@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useToast } from '../components/ToastProvider'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useTheme } from '../contexts/ThemeContext'
+import { me as fetchMe } from '../services/auth'
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -76,8 +77,12 @@ export default function Profile() {
     const loadProfile = async () => {
       try {
         setIsLoading(true)
-        const apiData = await mockApi.loadProfile()
-        const profileData = { name: apiData.name, email: apiData.email, currency: apiData.currency }
+        const apiData = await fetchMe()
+        const profileData = {
+          name: apiData.fullName ?? storedPreferences.name ?? '',
+          email: apiData.email ?? storedPreferences.email ?? '',
+          currency: storedPreferences.currency ?? 'INR',
+        }
         reset(profileData)
         setStoredPreferences(profileData)
       } catch (error) {
