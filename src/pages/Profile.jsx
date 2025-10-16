@@ -45,8 +45,7 @@ const currencies = [
 
 const themes = [
   { value: 'light', label: 'Light', icon: '☀️' },
-  { value: 'dark', label: 'Dark', icon: '🌙' },
-  { value: 'system', label: 'System', icon: '💻' }
+  { value: 'dark', label: 'Dark', icon: '🌙' }
 ]
 
 export default function Profile() {
@@ -334,7 +333,7 @@ export default function Profile() {
         </div>
         
         <div className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {themes.map((themeOption) => (
               <button
                 key={themeOption.value}

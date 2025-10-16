@@ -43,7 +43,7 @@ A modern, feature-rich expense tracking application built with React and Tailwin
 
 ### 👤 **User Profile & Settings**
 - **Profile Management**: Update name, email, and preferences
-- **Theme Customization**: Choose from Light, Dark, or System theme
+- **Theme Customization**: Choose from Light or Dark theme
 - **Currency Selection**: Set your preferred currency
 - **Data Export**: Download your data in JSON format
 - **Regional Settings**: Language, date format, and fiscal year preferences
@@ -255,7 +255,7 @@ yarn preview
 
 1. Navigate to **Settings** or **Profile**
 2. Update your preferences:
-   - Theme (Light/Dark/System)
+   - Theme (Light/Dark)
    - Currency
    - Language
    - Notification preferences
